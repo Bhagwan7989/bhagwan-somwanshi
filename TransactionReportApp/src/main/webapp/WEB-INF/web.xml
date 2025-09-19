@@ -7,7 +7,7 @@
 
     <display-name>TransactionReportApp</display-name>
 
-    <!-- Report Servlet -->
+   
     <servlet>
         <servlet-name>ReportServlet</servlet-name>
         <servlet-class>servlet.ReportServlet</servlet-class>
@@ -17,7 +17,6 @@
         <url-pattern>/ReportServlet</url-pattern>
     </servlet-mapping>
 
-    <!-- Excel Export Servlet -->
     <servlet>
         <servlet-name>ExcelExportServlet</servlet-name>
         <servlet-class>servlet.ExcelExportServlet</servlet-class>
@@ -27,7 +26,6 @@
         <url-pattern>/ExcelExportServlet</url-pattern>
     </servlet-mapping>
 
-    <!-- PDF Export Servlet -->
     <servlet>
         <servlet-name>PdfExportServlet</servlet-name>
         <servlet-class>servlet.PdfExportServlet</servlet-class>
