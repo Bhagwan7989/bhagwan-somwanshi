@@ -1,0 +1,102 @@
+<%@ page import="java.util.*, model.Transaction" %>
+<html>
+<head>
+<title>Transaction Report</title>
+<style>
+body { font-family: Arial; background-color:#f9f9f9; }
+h2 { color:#04AA6D; }
+table { border-collapse: collapse; width: 100%; margin-top:20px; }
+th, td { border: 1px solid #ddd; padding: 8px; text-align:left; }
+tr:nth-child(even){background-color: #f2f2f2;}
+tr:hover {background-color: #d1e7dd; transition: 0.3s;}
+th { background-color: #04AA6D; color: white; }
+input[type=text], input[type=date] { padding:5px; width:150px; margin-bottom:5px; }
+button { padding:5px 10px; background-color:#04AA6D; color:white; border:none; cursor:pointer; margin-top:5px; }
+button:hover { background-color:#039b5d; }
+.filter-row td { background-color:#eafaf1; }
+</style>
+</head>
+<body>
+<h2>Transaction Report</h2>
+
+<form method="post" action="ReportServlet">
+<table>
+<tr class="filter-row"><td>Date From:</td>
+<td><input type="date" name="startDate" value="<%= request.getAttribute("startDate") != null ? request.getAttribute("startDate") : "" %>" required></td></tr>
+<tr class="filter-row"><td>Date To:</td>
+<td><input type="date" name="endDate" value="<%= request.getAttribute("endDate") != null ? request.getAttribute("endDate") : "" %>" required></td></tr>
+<tr class="filter-row"><td>Status:</td>
+<td><input type="text" name="status" value="<%= request.getAttribute("status") != null ? request.getAttribute("status") : "" %>"></td></tr>
+<tr class="filter-row"><td>Min Amount:</td>
+<td><input type="text" name="minAmount" value="<%= request.getAttribute("minAmount") != null ? request.getAttribute("minAmount") : "" %>"></td></tr>
+<tr class="filter-row"><td>Max Amount:</td>
+<td><input type="text" name="maxAmount" value="<%= request.getAttribute("maxAmount") != null ? request.getAttribute("maxAmount") : "" %>"></td></tr>
+<tr class="filter-row"><td>Account Number:</td>
+<td><input type="text" name="accountNumber" value="<%= request.getAttribute("accountNumber") != null ? request.getAttribute("accountNumber") : "" %>"></td></tr>
+<tr class="filter-row"><td>IFSC Code:</td>
+<td><input type="text" name="ifscCode" value="<%= request.getAttribute("ifscCode") != null ? request.getAttribute("ifscCode") : "" %>"></td></tr>
+<tr><td colspan="2"><button type="submit">Generate Report</button></td></tr>
+</table>
+</form>
+
+<%
+List<Transaction> transactions = (List<Transaction>) request.getAttribute("transactions");
+if(transactions != null && !transactions.isEmpty()){
+%>
+
+<form method="get" action="ExcelExportServlet" target="_blank">
+<input type="hidden" name="startDate" value="<%= request.getAttribute("startDate") %>">
+<input type="hidden" name="endDate" value="<%= request.getAttribute("endDate") %>">
+<input type="hidden" name="status" value="<%= request.getAttribute("status") %>">
+<input type="hidden" name="minAmount" value="<%= request.getAttribute("minAmount") %>">
+<input type="hidden" name="maxAmount" value="<%= request.getAttribute("maxAmount") %>">
+<input type="hidden" name="accountNumber" value="<%= request.getAttribute("accountNumber") %>">
+<input type="hidden" name="ifscCode" value="<%= request.getAttribute("ifscCode") %>">
+<button type="submit">Export Excel</button>
+</form>
+
+<form method="get" action="PdfExportServlet" target="_blank">
+<input type="hidden" name="startDate" value="<%= request.getAttribute("startDate") %>">
+<input type="hidden" name="endDate" value="<%= request.getAttribute("endDate") %>">
+<input type="hidden" name="status" value="<%= request.getAttribute("status") %>">
+<input type="hidden" name="minAmount" value="<%= request.getAttribute("minAmount") %>">
+<input type="hidden" name="maxAmount" value="<%= request.getAttribute("maxAmount") %>">
+<input type="hidden" name="accountNumber" value="<%= request.getAttribute("accountNumber") %>">
+<input type="hidden" name="ifscCode" value="<%= request.getAttribute("ifscCode") %>">
+<button type="submit">Export PDF</button>
+</form>
+
+<br/>
+<table>
+<tr>
+<th>ID</th><th>UTR</th><th>Account</th><th>IFSC</th><th>Bene</th><th>Sender</th><th>Date</th>
+<th>Amount</th><th>Currency</th><th>Mode</th><th>Status</th><th>Ref</th><th>Branch</th><th>Description</th><th>Remarks</th>
+</tr>
+<%
+for(Transaction t : transactions){
+%>
+<tr>
+<td><%=t.getTransactionId()%></td>
+<td><%=t.getUtrNumber()%></td>
+<td><%=t.getAccountNumber()%></td>
+<td><%=t.getIfscCode()%></td>
+<td><%=t.getBeneficiaryName()%></td>
+<td><%=t.getSenderName()%></td>
+<td><%=t.getTransactionDate()%></td>
+<td><%=t.getAmount()%></td>
+<td><%=t.getCurrency()%></td>
+<td><%=t.getMode()%></td>
+<td><%=t.getStatus()%></td>
+<td><%=t.getReferenceNumber()%></td>
+<td><%=t.getBranch()%></td>
+<td><%=t.getDescription()%></td>
+<td><%=t.getRemarks()%></td>
+</tr>
+<% } %>
+</table>
+<% } else if(request.getAttribute("transactions") != null){ %>
+<p>No records found.</p>
+<% } %>
+
+</body>
+</html>

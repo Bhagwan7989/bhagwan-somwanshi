@@ -1,0 +1,26 @@
+<!-- Amount filters -->
+<div class="filter-row">
+    <label>Amount From:</label>
+    <input type="number" step="0.01" name="amountFrom" value="<%= request.getAttribute("amountFrom") != null ? request.getAttribute("amountFrom") : "" %>"/>
+</div>
+<div class="filter-row">
+    <label>Amount To:</label>
+    <input type="number" step="0.01" name="amountTo" value="<%= request.getAttribute("amountTo") != null ? request.getAttribute("amountTo") : "" %>"/>
+</div>
+
+<!-- Pagination -->
+<%
+    Integer page = (Integer) request.getAttribute("page");
+    if(page == null) page = 1;
+%>
+<div class="pagination">
+    <form method="post" action="ReportServlet">
+        <input type="hidden" name="page" value="<%= page - 1 %>"/>
+        <button type="submit" <%= (page <= 1 ? "disabled" : "") %>>Previous</button>
+    </form>
+    <span>Page <%= page %></span>
+    <form method="post" action="ReportServlet">
+        <input type="hidden" name="page" value="<%= page + 1 %>"/>
+        <button type="submit">Next</button>
+    </form>
+</div>

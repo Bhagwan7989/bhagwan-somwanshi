@@ -1,0 +1,31 @@
+<!-- Filter Form -->
+<form action="ReportServlet" method="post">
+    <label>Start Date:</label>
+    <input type="date" name="startDate" value="<%= request.getParameter("startDate") != null ? request.getParameter("startDate") : "" %>" required />
+
+    <label>End Date:</label>
+    <input type="date" name="endDate" value="<%= request.getParameter("endDate") != null ? request.getParameter("endDate") : "" %>" required />
+
+    <label>Status:</label>
+    <select name="status">
+        <option value="">-- Select Status --</option>
+        <option value="SUCCESS" <%= "SUCCESS".equals(request.getParameter("status")) ? "selected" : "" %>>SUCCESS</option>
+        <option value="FAILED" <%= "FAILED".equals(request.getParameter("status")) ? "selected" : "" %>>FAILED</option>
+    </select>
+
+    <label>Amount Range:</label>
+    <input type="number" step="0.01" name="minAmount" placeholder="Min Amount" 
+           value="<%= request.getParameter("minAmount") != null ? request.getParameter("minAmount") : "" %>" />
+    <input type="number" step="0.01" name="maxAmount" placeholder="Max Amount" 
+           value="<%= request.getParameter("maxAmount") != null ? request.getParameter("maxAmount") : "" %>" />
+
+    <label>Account Number:</label>
+    <input type="text" name="accountNumber" placeholder="Enter Account Number"
+           value="<%= request.getParameter("accountNumber") != null ? request.getParameter("accountNumber") : "" %>" />
+
+    <label>IFSC Code:</label>
+    <input type="text" name="ifscCode" placeholder="Enter IFSC Code"
+           value="<%= request.getParameter("ifscCode") != null ? request.getParameter("ifscCode") : "" %>" />
+
+    <button type="submit">Generate Report</button>
+</form>

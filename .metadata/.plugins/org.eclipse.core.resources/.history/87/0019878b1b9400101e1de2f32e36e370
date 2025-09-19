@@ -1,0 +1,162 @@
+<%@ page import="java.util.*, model.Transaction" %>
+<%@ page contentType="text/html;charset=UTF-8" %>
+
+<html>
+<head>
+    <title>Transaction Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            padding: 20px;
+        }
+        h2 {
+            color: #333;
+        }
+        .filter-form {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 900px;
+        }
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .filter-row label {
+            width: 150px;
+            margin-right: 10px;
+            font-weight: bold;
+            color: #555;
+        }
+        .filter-row input, .filter-row select {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .filter-row button, .filter-row a {
+            margin-top: 10px;
+            padding: 6px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .filter-row a {
+            background-color: #28a745;
+            margin-left: 10px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        p.no-records {
+            color: #d9534f;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<h2>Transaction Report</h2>
+
+<form method="post" action="ReportServlet" class="filter-form">
+    <!-- Row 1: Account and IFSC -->
+    <div class="filter-row">
+        <label>Account Number:</label>
+        <input type="text" name="accountNumber" value="<%= request.getAttribute("accountNumber") != null ? request.getAttribute("accountNumber") : "" %>"/>
+    </div>
+    <div class="filter-row">
+        <label>IFSC:</label>
+        <input type="text" name="ifscCode" value="<%= request.getAttribute("ifscCode") != null ? request.getAttribute("ifscCode") : "" %>"/>
+    </div>
+    <!-- Row 2: Status -->
+    <div class="filter-row">
+        <label>Status:</label>
+        <select name="status">
+            <option value="">All</option>
+            <option value="SUCCESS" <%= "SUCCESS".equals(request.getAttribute("status")) ? "selected" : "" %>>SUCCESS</option>
+            <option value="FAILED" <%= "FAILED".equals(request.getAttribute("status")) ? "selected" : "" %>>FAILED</option>
+        </select>
+    </div>
+    <!-- Row 3: Date From and To -->
+    <div class="filter-row">
+        <label>Date From:</label>
+        <input type="date" name="dateFrom" value="<%= request.getAttribute("dateFrom") != null ? request.getAttribute("dateFrom") : "" %>"/>
+    </div>
+    <div class="filter-row">
+        <label>Date To:</label>
+        <input type="date" name="dateTo" value="<%= request.getAttribute("dateTo") != null ? request.getAttribute("dateTo") : "" %>"/>
+    </div>
+    <!-- Row 4: Buttons -->
+    <div class="filter-row">
+        <button type="submit" name="submit">Show Report</button>
+        <a href="ExcelExportServlet?accountNumber=<%=request.getAttribute("accountNumber")%>&ifscCode=<%=request.getAttribute("ifscCode")%>&status=<%=request.getAttribute("status")%>&dateFrom=<%=request.getAttribute("dateFrom")%>&dateTo=<%=request.getAttribute("dateTo")%>">Export Excel</a>
+        <a href="PdfExportServlet?accountNumber=<%=request.getAttribute("accountNumber")%>&ifscCode=<%=request.getAttribute("ifscCode")%>&status=<%=request.getAttribute("status")%>&dateFrom=<%=request.getAttribute("dateFrom")%>&dateTo=<%=request.getAttribute("dateTo")%>">Export PDF</a>
+    </div>
+</form>
+
+<%
+    List<Transaction> transactions = (List<Transaction>) request.getAttribute("transactions");
+    if(transactions != null && !transactions.isEmpty()) {
+%>
+<table>
+    <tr>
+        <th>ID</th><th>Account</th><th>IFSC</th><th>Bene Name</th><th>Sender</th><th>Date</th>
+        <th>Amount</th><th>Currency</th><th>Mode</th><th>Status</th><th>Reference</th>
+        <th>Branch</th><th>Description</th><th>Remarks</th>
+    </tr>
+    <%
+        for(Transaction t : transactions){
+    %>
+    <tr>
+        <td><%=t.getTransactionId()%></td>
+        <td><%=t.getAccountNumber()%></td>
+        <td><%=t.getIfscCode()%></td>
+        <td><%=t.getBeneficiaryName()%></td>
+        <td><%=t.getSenderName()%></td>
+        <td><%=t.getTransactionDate()%></td>
+        <td><%=t.getAmount()%></td>
+        <td><%=t.getCurrency()%></td>
+        <td><%=t.getMode()%></td>
+        <td><%=t.getStatus()%></td>
+        <td><%=t.getReferenceNumber()%></td>
+        <td><%=t.getBranch()%></td>
+        <td><%=t.getDescription()%></td>
+        <td><%=t.getRemarks()%></td>
+    </tr>
+    <%
+        }
+    %>
+</table>
+<%
+    } else if(transactions != null){
+%>
+<p class="no-records">No records found.</p>
+<%
+    }
+%>
+</body>
+</html>

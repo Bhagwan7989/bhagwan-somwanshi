@@ -1,0 +1,14 @@
+package model;
+
+import java.util.Date;
+
+public class Transaction {
+    private int transactionId;
+    private String accountNumber, ifscCode, beneficiaryName, senderName;
+    private Date transactionDate;
+    private double amount;
+    private String currency, mode, status, referenceNumber, branch, description, remarks;
+
+    // Getters and Setters
+    // ... (same as previous professional version)
+}

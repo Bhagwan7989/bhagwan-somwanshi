@@ -1,0 +1,54 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+import javax.servlet.*;
+import javax.servlet.http.*;
+import java.io.*;
+import java.util.List;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+public class ExcelExportServlet extends HttpServlet {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String accountNumber = request.getParameter("accountNumber");
+        String ifscCode = request.getParameter("ifscCode");
+        String status = request.getParameter("status");
+        String dateFrom = request.getParameter("dateFrom");
+        String dateTo = request.getParameter("dateTo");
+
+        TransactionDAO dao = new TransactionDAO();
+        List<Transaction> transactions = dao.getFilteredTransactions(accountNumber, ifscCode, status, dateFrom, dateTo);
+
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Transactions");
+        String[] columns = {"ID","Account","IFSC","Bene Name","Sender","Date","Amount","Currency","Mode","Status","Reference","Branch","Description","Remarks"};
+
+        Row header = sheet.createRow(0);
+        for (int i = 0; i < columns.length; i++) header.createCell(i).setCellValue(columns[i]);
+
+        int rowNum = 1;
+        for (Transaction t : transactions) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(t.getTransactionId());
+            row.createCell(1).setCellValue(t.getAccountNumber());
+            row.createCell(2).setCellValue(t.getIfscCode());
+            row.createCell(3).setCellValue(t.getBeneficiaryName());
+            row.createCell(4).setCellValue(t.getSenderName());
+            row.createCell(5).setCellValue(t.getTransactionDate().toString());
+            row.createCell(6).setCellValue(t.getAmount());
+            row.createCell(7).setCellValue(t.getCurrency());
+            row.createCell(8).setCellValue(t.getMode());
+            row.createCell(9).setCellValue(t.getStatus());
+            row.createCell(10).setCellValue(t.getReferenceNumber());
+            row.createCell(11).setCellValue(t.getBranch());
+            row.createCell(12).setCellValue(t.getDescription());
+            row.createCell(13).setCellValue(t.getRemarks());
+        }
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=transactions.xlsx");
+        workbook.write(response.getOutputStream());
+        workbook.close();
+    }
+}

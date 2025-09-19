@@ -1,0 +1,71 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.*;
+import java.io.IOException;
+import java.util.List;
+
+public class PdfExportServlet extends HttpServlet {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String startDate = request.getParameter("startDate");
+        String endDate = request.getParameter("endDate");
+        String status = request.getParameter("status");
+        String minAmount = request.getParameter("minAmount");
+        String maxAmount = request.getParameter("maxAmount");
+        String accountNumber = request.getParameter("accountNumber");
+        String ifscCode = request.getParameter("ifscCode");
+
+        TransactionDAO dao = new TransactionDAO();
+        List<Transaction> transactions = dao.getFilteredTransactions(startDate, endDate, status, minAmount, maxAmount, accountNumber, ifscCode, null, null);
+
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=transactions.pdf");
+
+        try {
+            Document document = new Document();
+            PdfWriter.getInstance(document, response.getOutputStream());
+            document.open();
+
+            Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD);
+            PdfPTable table = new PdfPTable(15);
+            table.setWidthPercentage(100f);
+            table.setWidths(new float[]{2f,3f,3f,3f,3f,3f,3f,2f,2f,2f,2f,3f,2f,4f,4f});
+
+            String[] headers = {"ID","UTR","Account","IFSC","Beneficiary","Sender","Date","Amount","Currency","Mode","Status","Ref","Branch","Description","Remarks"};
+            for(String h: headers){
+                PdfPCell cell = new PdfPCell(new Phrase(h, headerFont));
+                cell.setBackgroundColor(BaseColor.LIGHT_GRAY);
+                table.addCell(cell);
+            }
+
+            Font rowFont = FontFactory.getFont(FontFactory.HELVETICA,10);
+            for(Transaction t: transactions){
+                table.addCell(new PdfPCell(new Phrase(String.valueOf(t.getTransactionId()),rowFont)));
+                table.addCell(new PdfPCell(new Phrase(t.getUtrNumber(),rowFont)));
+                table.addCell(new PdfPCell(new Phrase(t.getAccountNumber(),rowFont)));
+                table.addCell(new PdfPCell(new Phrase(t.getIfscCode(),rowFont)));
+                table.addCell(new PdfPCell(new Phrase(t.getBeneficiaryName(),rowFont)));
+                table.addCell(new PdfPCell(new Phrase(t.getSenderName(),rowFont)));
+                table.addCell(new PdfPCell(new Phrase(t.getTransactionDate().toString(),rowFont)));
+                table.addCell(new PdfPCell(new Phrase(String.valueOf(t.getAmount()),rowFont)));
+                table.addCell(new PdfPCell(new Phrase(t.getCurrency(),rowFont)));
+                table.addCell(new PdfPCell(new Phrase(t.getMode(),rowFont)));
+                table.addCell(new PdfPCell(new Phrase(t.getStatus(),rowFont)));
+                table.addCell(new PdfPCell(new Phrase(t.getReferenceNumber(),rowFont)));
+                table.addCell(new PdfPCell(new Phrase(t.getBranch(),rowFont)));
+                table.addCell(new PdfPCell(new Phrase(t.getDescription(),rowFont)));
+                table.addCell(new PdfPCell(new Phrase(t.getRemarks(),rowFont)));
+            }
+
+            document.add(table);
+            document.close();
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+}

@@ -1,0 +1,67 @@
+package model;
+
+import java.util.Date;
+
+public class Transaction {
+    private int transactionId;
+    private String accountNumber;
+    private String ifscCode;
+    private String beneficiaryName;
+    private String senderName;
+    private Date transactionDate;
+    private double amount;
+    private String currency;
+    private String mode;
+    private String status;
+    private String referenceNumber;
+    private String utrNumber;
+    private String branch;
+    private String description;
+    private String remarks;
+
+    // Getters and Setters
+    public int getTransactionId() { return transactionId; }
+    public void setTransactionId(int transactionId) { this.transactionId = transactionId; }
+
+    public String getAccountNumber() { return accountNumber; }
+    public void setAccountNumber(String accountNumber) { this.accountNumber = accountNumber; }
+
+    public String getIfscCode() { return ifscCode; }
+    public void setIfscCode(String ifscCode) { this.ifscCode = ifscCode; }
+
+    public String getBeneficiaryName() { return beneficiaryName; }
+    public void setBeneficiaryName(String beneficiaryName) { this.beneficiaryName = beneficiaryName; }
+
+    public String getSenderName() { return senderName; }
+    public void setSenderName(String senderName) { this.senderName = senderName; }
+
+    public Date getTransactionDate() { return transactionDate; }
+    public void setTransactionDate(Date transactionDate) { this.transactionDate = transactionDate; }
+
+    public double getAmount() { return amount; }
+    public void setAmount(double amount) { this.amount = amount; }
+
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
+
+    public String getMode() { return mode; }
+    public void setMode(String mode) { this.mode = mode; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public String getReferenceNumber() { return referenceNumber; }
+    public void setReferenceNumber(String referenceNumber) { this.referenceNumber = referenceNumber; }
+
+    public String getUtrNumber() { return utrNumber; }
+    public void setUtrNumber(String utrNumber) { this.utrNumber = utrNumber; }
+
+    public String getBranch() { return branch; }
+    public void setBranch(String branch) { this.branch = branch; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public String getRemarks() { return remarks; }
+    public void setRemarks(String remarks) { this.remarks = remarks; }
+}

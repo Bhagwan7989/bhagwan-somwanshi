@@ -1,0 +1,59 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+import javax.servlet.*;
+import javax.servlet.http.*;
+import java.io.*;
+import java.util.List;
+
+public class PdfExportServlet extends HttpServlet {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String accountNumber = request.getParameter("accountNumber");
+        String ifscCode = request.getParameter("ifscCode");
+        String status = request.getParameter("status");
+        String dateFrom = request.getParameter("dateFrom");
+        String dateTo = request.getParameter("dateTo");
+
+        TransactionDAO dao = new TransactionDAO();
+        List<Transaction> transactions = dao.getFilteredTransactions(accountNumber, ifscCode, status, dateFrom, dateTo);
+
+        Document document = new Document();
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition","attachment; filename=transactions.pdf");
+
+        try {
+            PdfWriter.getInstance(document, response.getOutputStream());
+            document.open();
+            PdfPTable table = new PdfPTable(14);
+            table.setWidthPercentage(100);
+
+            String[] headers = {"ID","Account","IFSC","Bene Name","Sender","Date","Amount","Currency","Mode","Status","Reference","Branch","Description","Remarks"};
+            for(String h: headers) table.addCell(new PdfPCell(new Phrase(h)));
+
+            for(Transaction t : transactions) {
+                table.addCell(String.valueOf(t.getTransactionId()));
+                table.addCell(t.getAccountNumber());
+                table.addCell(t.getIfscCode());
+                table.addCell(t.getBeneficiaryName());
+                table.addCell(t.getSenderName());
+                table.addCell(t.getTransactionDate().toString());
+                table.addCell(String.valueOf(t.getAmount()));
+                table.addCell(t.getCurrency());
+                table.addCell(t.getMode());
+                table.addCell(t.getStatus());
+                table.addCell(t.getReferenceNumber());
+                table.addCell(t.getBranch());
+                table.addCell(t.getDescription());
+                table.addCell(t.getRemarks());
+            }
+
+            document.add(table);
+            document.close();
+        } catch (DocumentException e) {
+            e.printStackTrace();
+        }
+    }
+}

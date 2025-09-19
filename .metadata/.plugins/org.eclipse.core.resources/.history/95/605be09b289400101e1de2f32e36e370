@@ -1,0 +1,64 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.*;
+import java.io.IOException;
+import java.util.List;
+
+public class ReportServlet extends HttpServlet {
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Read filters from request
+        String startDate = request.getParameter("startDate");
+        String endDate = request.getParameter("endDate");
+        String status = request.getParameter("status");
+        String minAmount = request.getParameter("minAmount");
+        String maxAmount = request.getParameter("maxAmount");
+        String accountNumber = request.getParameter("accountNumber");
+        String ifscCode = request.getParameter("ifscCode");
+
+        // Pagination
+        int page = 1;
+        int pageSize = 20; // adjust as needed
+        String pageParam = request.getParameter("page");
+        if (pageParam != null && !pageParam.isEmpty()) {
+            try {
+                page = Integer.parseInt(pageParam);
+            } catch (NumberFormatException e) {
+                page = 1;
+            }
+        }
+
+        // Validate mandatory dates
+        if (startDate == null || startDate.isEmpty() || endDate == null || endDate.isEmpty()) {
+            request.setAttribute("error", "Date From and Date To are required.");
+            request.getRequestDispatcher("index.jsp").forward(request, response);
+            return;
+        }
+
+        TransactionDAO dao = new TransactionDAO();
+        List<Transaction> transactions = dao.getFilteredTransactions(
+                startDate, endDate, status, minAmount, maxAmount, accountNumber, ifscCode, page, pageSize
+        );
+
+        // Preserve filter values in request
+        request.setAttribute("transactions", transactions);
+        request.setAttribute("startDate", startDate);
+        request.setAttribute("endDate", endDate);
+        request.setAttribute("status", status);
+        request.setAttribute("minAmount", minAmount);
+        request.setAttribute("maxAmount", maxAmount);
+        request.setAttribute("accountNumber", accountNumber);
+        request.setAttribute("ifscCode", ifscCode);
+        request.setAttribute("page", page);
+
+        request.getRequestDispatcher("index.jsp").forward(request, response);
+    }
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        doPost(request, response); // handle GET same as POST
+    }
+}

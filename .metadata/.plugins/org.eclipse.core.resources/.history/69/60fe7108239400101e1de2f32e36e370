@@ -1,0 +1,113 @@
+package servlet;
+
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+import dao.TransactionDAO;
+import model.Transaction;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.*;
+import java.io.*;
+import java.util.List;
+
+public class PdfExportServlet extends HttpServlet {
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Read filter parameters
+        String startDate = trim(request.getParameter("startDate"));
+        String endDate = trim(request.getParameter("endDate"));
+        String status = trim(request.getParameter("status"));
+        String minAmount = trim(request.getParameter("minAmount"));
+        String maxAmount = trim(request.getParameter("maxAmount"));
+        String accountNumber = trim(request.getParameter("accountNumber"));
+        String ifscCode = trim(request.getParameter("ifscCode"));
+
+        // Validate mandatory dates
+        if (startDate == null || startDate.isEmpty() || endDate == null || endDate.isEmpty()) {
+            response.setContentType("text/plain");
+            response.getWriter().write("Date From and Date To are required to export.");
+            return;
+        }
+
+        TransactionDAO dao = new TransactionDAO();
+        List<Transaction> data = dao.getFilteredTransactions(
+                startDate, endDate, status, minAmount, maxAmount, accountNumber, ifscCode
+        );
+
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=transactions.pdf");
+
+        Document document = new Document(PageSize.A4.rotate(), 20, 20, 20, 20);
+        try {
+            PdfWriter.getInstance(document, response.getOutputStream());
+            document.open();
+
+            // Title
+            Font titleFont = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD, BaseColor.BLACK);
+            Paragraph title = new Paragraph("Transaction Report", titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(12);
+            document.add(title);
+
+            // Table
+            PdfPTable table = new PdfPTable(15); // 15 columns
+            table.setWidthPercentage(100);
+
+            // Headers
+            String[] headers = {"ID","UTR No","Account","IFSC","Beneficiary","Sender","Date","Amount","Currency",
+                    "Mode","Status","Reference","Branch","Description","Remarks"};
+
+            Font headerFont = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, BaseColor.WHITE);
+            BaseColor headerBg = new BaseColor(59,130,246);
+
+            for (String h : headers) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, headerFont));
+                cell.setBackgroundColor(headerBg);
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cell.setPadding(6);
+                table.addCell(cell);
+            }
+
+            // Rows
+            Font rowFont = new Font(Font.FontFamily.HELVETICA, 9, Font.NORMAL, BaseColor.BLACK);
+            boolean alternate = false;
+            for (Transaction t : data) {
+                BaseColor rowBg = alternate ? new BaseColor(245, 247, 250) : BaseColor.WHITE;
+
+                addCell(table, String.valueOf(t.getTransactionId()), rowFont, rowBg);
+                addCell(table, nullSafe(t.getUtrNumber()), rowFont, rowBg);
+                addCell(table, nullSafe(t.getAccountNumber()), rowFont, rowBg);
+                addCell(table, nullSafe(t.getIfscCode()), rowFont, rowBg);
+                addCell(table, nullSafe(t.getBeneficiaryName()), rowFont, rowBg);
+                addCell(table, nullSafe(t.getSenderName()), rowFont, rowBg);
+                addCell(table, t.getTransactionDate() != null ? t.getTransactionDate().toString() : "", rowFont, rowBg);
+                addCell(table, t.getAmount() != null ? t.getAmount().toString() : "", rowFont, rowBg);
+                addCell(table, nullSafe(t.getCurrency()), rowFont, rowBg);
+                addCell(table, nullSafe(t.getMode()), rowFont, rowBg);
+                addCell(table, nullSafe(t.getStatus()), rowFont, rowBg);
+                addCell(table, nullSafe(t.getReferenceNumber()), rowFont, rowBg);
+                addCell(table, nullSafe(t.getBranch()), rowFont, rowBg);
+                addCell(table, nullSafe(t.getDescription()), rowFont, rowBg);
+                addCell(table, nullSafe(t.getRemarks()), rowFont, rowBg);
+
+                alternate = !alternate;
+            }
+
+            document.add(table);
+            document.close();
+
+        } catch (DocumentException e) {
+            throw new ServletException("Error generating PDF", e);
+        }
+    }
+
+    private void addCell(PdfPTable table, String text, Font font, BaseColor bg) {
+        PdfPCell cell = new PdfPCell(new Phrase(text, font));
+        cell.setBackgroundColor(bg);
+        cell.setPadding(6);
+        table.addCell(cell);
+    }
+
+    private String nullSafe(String s) { return s == null ? "" : s; }
+    private String trim(String s) { return s == null ? null : s.trim(); }
+}

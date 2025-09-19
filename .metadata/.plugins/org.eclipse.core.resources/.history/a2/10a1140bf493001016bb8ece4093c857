@@ -1,0 +1,21 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+import javax.servlet.*;
+import javax.servlet.http.*;
+import java.io.IOException;
+import java.util.List;
+
+public class ReportServlet extends HttpServlet {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        TransactionDAO dao = new TransactionDAO();
+        List<Transaction> transactions = dao.getAllTransactions();
+        request.setAttribute("transactions", transactions);
+        request.getRequestDispatcher("index.jsp").forward(request, response);
+    }
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        doPost(request, response);
+    }
+}

@@ -1,0 +1,87 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.*;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+public class PdfExportServlet extends HttpServlet {
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+
+        HttpSession session = req.getSession();
+        Date fromDate = (Date) session.getAttribute("fromDate");
+        Date toDate = (Date) session.getAttribute("toDate");
+        Double minAmt = (Double) session.getAttribute("minAmt");
+        Double maxAmt = (Double) session.getAttribute("maxAmt");
+        String accountNumber = (String) session.getAttribute("accountNumber");
+        String ifscCode = (String) session.getAttribute("ifscCode");
+        String status = (String) session.getAttribute("status");
+
+        TransactionDAO dao = new TransactionDAO();
+        List<Transaction> transactions = dao.getTransactions(fromDate, toDate, minAmt, maxAmt, accountNumber, ifscCode, status);
+
+        resp.setContentType("application/pdf");
+        resp.setHeader("Content-Disposition", "attachment; filename=transactions.pdf");
+
+        try {
+            Document document = new Document(PageSize.A4.rotate());
+            OutputStream out = resp.getOutputStream();
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            Font titleFont = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD);
+            Paragraph title = new Paragraph("Transaction Report", titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            document.add(title);
+            document.add(new Paragraph(" "));
+
+            String[] headers = { "ID","Account No","IFSC","Beneficiary","Sender","Date","Amount","Currency","Mode","Status","Reference No","UTR No","Branch","Description","Remarks" };
+            PdfPTable table = new PdfPTable(headers.length);
+            table.setWidthPercentage(100);
+            table.setSpacingBefore(10f);
+
+            for (String h : headers) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD)));
+                cell.setBackgroundColor(BaseColor.LIGHT_GRAY);
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                table.addCell(cell);
+            }
+
+            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+            for (Transaction t : transactions) {
+                table.addCell(String.valueOf(t.getTransactionId()));
+                table.addCell(t.getAccountNumber());
+                table.addCell(t.getIfscCode());
+                table.addCell(t.getBeneficiaryName());
+                table.addCell(t.getSenderName());
+                table.addCell(t.getTransactionDate() != null ? sdf.format(t.getTransactionDate()) : "");
+                table.addCell(String.valueOf(t.getAmount()));
+                table.addCell(t.getCurrency());
+                table.addCell(t.getMode());
+                table.addCell(t.getStatus());
+                table.addCell(t.getReferenceNumber());
+                table.addCell(t.getUtrNumber());
+                table.addCell(t.getBranch());
+                table.addCell(t.getDescription());
+                table.addCell(t.getRemarks());
+            }
+
+            document.add(table);
+            document.close();
+            out.close();
+        } catch (Exception e) {
+            throw new ServletException(e);
+        }
+    }
+}

@@ -1,0 +1,66 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.*;
+import java.io.IOException;
+import java.util.List;
+
+
+public class ExcelExportServlet extends HttpServlet {
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String startDate = request.getParameter("startDate");
+        String endDate = request.getParameter("endDate");
+        String status = request.getParameter("status");
+        String minAmount = request.getParameter("minAmount");
+        String maxAmount = request.getParameter("maxAmount");
+        String accountNumber = request.getParameter("accountNumber");
+        String ifscCode = request.getParameter("ifscCode");
+
+        TransactionDAO dao = new TransactionDAO();
+        List<Transaction> transactions = dao.getFilteredTransactions(
+                startDate, endDate, status, minAmount, maxAmount,
+                accountNumber, ifscCode, null, null
+        );
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=transactions.xlsx");
+
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Transactions");
+        Row header = sheet.createRow(0);
+        String[] columns = {"ID","UTR","Account","IFSC","Beneficiary","Sender","Date","Amount","Currency","Mode","Status","Ref","Branch","Description","Remarks"};
+        for (int i = 0; i < columns.length; i++) header.createCell(i).setCellValue(columns[i]);
+
+        int rowIdx = 1;
+        for (Transaction t : transactions) {
+            Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(t.getTransactionId());
+            row.createCell(1).setCellValue(t.getUtrNumber());
+            row.createCell(2).setCellValue(t.getAccountNumber());
+            row.createCell(3).setCellValue(t.getIfscCode());
+            row.createCell(4).setCellValue(t.getBeneficiaryName());
+            row.createCell(5).setCellValue(t.getSenderName());
+            row.createCell(6).setCellValue(t.getTransactionDate().toString());
+            row.createCell(7).setCellValue(t.getAmount());
+            row.createCell(8).setCellValue(t.getCurrency());
+            row.createCell(9).setCellValue(t.getMode());
+            row.createCell(10).setCellValue(t.getStatus());
+            row.createCell(11).setCellValue(t.getReferenceNumber());
+            row.createCell(12).setCellValue(t.getBranch());
+            row.createCell(13).setCellValue(t.getDescription());
+            row.createCell(14).setCellValue(t.getRemarks());
+        }
+
+        workbook.write(response.getOutputStream());
+        workbook.close();
+    }
+}

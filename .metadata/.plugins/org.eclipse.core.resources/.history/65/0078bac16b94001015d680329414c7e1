@@ -1,0 +1,45 @@
+package dao;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import model.Transaction;
+
+public class TransactionDAO {
+    private Connection getConnection() throws Exception {
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        return DriverManager.getConnection("jdbc:mysql://localhost:3306/transactiondb","root","bhagwan@7989");
+    }
+
+    public List<Transaction> getTransactions(Date startDate, Date endDate, double minAmount, double maxAmount) throws Exception {
+        List<Transaction> list = new ArrayList<>();
+        String sql = "SELECT * FROM transactions WHERE transaction_date BETWEEN ? AND ? AND amount BETWEEN ? AND ?";
+        try(Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setDate(1, new java.sql.Date(startDate.getTime()));
+            ps.setDate(2, new java.sql.Date(endDate.getTime()));
+            ps.setDouble(3, minAmount);
+            ps.setDouble(4, maxAmount);
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()) {
+                Transaction t = new Transaction();
+                t.setTransactionId(rs.getInt("transaction_id"));
+                t.setAccountNumber(rs.getString("account_number"));
+                t.setIfscCode(rs.getString("ifsc_code"));
+                t.setBeneficiaryName(rs.getString("beneficiary_name"));
+                t.setSenderName(rs.getString("sender_name"));
+                t.setTransactionDate(rs.getDate("transaction_date"));
+                t.setAmount(rs.getDouble("amount"));
+                t.setCurrency(rs.getString("currency"));
+                t.setMode(rs.getString("mode"));
+                t.setStatus(rs.getString("status"));
+                t.setReferenceNumber(rs.getString("reference_number"));
+                t.setUtrNumber(rs.getString("utr_number"));
+                t.setBranch(rs.getString("branch"));
+                t.setDescription(rs.getString("description"));
+                t.setRemarks(rs.getString("remarks"));
+                list.add(t);
+            }
+        }
+        return list;
+    }
+}

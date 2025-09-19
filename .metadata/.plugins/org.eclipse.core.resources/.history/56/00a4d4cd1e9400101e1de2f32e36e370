@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Transaction Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f9fafb; }
+        .filter-form { background: white; padding: 20px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .filter-row { margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .filter-row label { width: 150px; font-weight: bold; }
+        .filter-row input, .filter-row select { flex: 1; padding: 6px; border: 1px solid #ccc; border-radius: 6px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; animation: fadeIn 1s ease-in-out; }
+        th { background: #3b82f6; color: white; padding: 8px; }
+        td { padding: 8px; border-bottom: 1px solid #ddd; }
+        tr:hover { background: #e0f2fe; transition: 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .pagination { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
+        button { background: #3b82f6; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+    <h2>Transaction Report</h2>
+
+    <form action="ReportServlet" method="post" class="filter-form">
+        <div class="filter-row">
+            <label>Account Number:</label>
+            <input type="text" name="accountNumber" value="<%= request.getAttribute("accountNumber")!=null?request.getAttribute("accountNumber"):"" %>"/>
+        </div>
+        <div class="filter-row">
+            <label>IFSC Code:</label>
+            <input type="text" name="ifscCode" value="<%= request.getAttribute("ifscCode")!=null?request.getAttribute("ifscCode"):"" %>"/>
+        </div>
+        <div class="filter-row">
+            <label>Status:</label>
+            <select name="status">
+                <option value="">--Select--</option>
+                <option value="SUCCESS" <%= "SUCCESS".equals(request.getAttribute("status"))?"selected":"" %>>SUCCESS</option>
+                <option value="FAILED" <%= "FAILED".equals(request.getAttribute("status"))?"selected":"" %>>FAILED</option>
+            </select>
+        </div>
+        <div class="filter-row">
+            <label>Date From:</label>
+            <input type="date" name="dateFrom" value="<%= request.getAttribute("dateFrom")!=null?request.getAttribute("dateFrom"):"" %>"/>
+        </div>
+        <div class="filter-row">
+            <label>Date To:</label>
+            <input type="date" name="dateTo" value="<%= request.getAttribute("dateTo")!=null?request.getAttribute("dateTo"):"" %>"/>
+        </div>
+        <div class="filter-row">
+            <label>Amount From:</label>
+            <input type="number" step="0.01" name="amountFrom" value="<%= request.getAttribute("amountFrom")!=null?request.getAttribute("amountFrom"):"" %>"/>
+        </div>
+        <div class="filter-row">
+            <label>Amount To:</label>
+            <input type="number" step="0.01" name="amountTo" value="<%= request.getAttribute("amountTo")!=null?request.getAttribute("amountTo"):"" %>"/>
+        </div>
+        <div class="filter-row">
+            <button type="submit">Generate Report</button>
+        </div>
+    </form>
+
+    <% List<model.Transaction> transactions = (List<model.Transaction>) request.getAttribute("transactions");
+       if (transactions != null && !transactions.isEmpty()) { %>
+        <table>
+            <tr>
+                <th>ID</th><th>Account</th><th>IFSC</th><th>Beneficiary</th><th>Sender</th><th>Date</th><th>Amount</th><th>Currency</th><th>Mode</th><th>Status</th><th>Ref</th><th>UTR</th><th>Branch</th><th>Description</th><th>Remarks</th>
+            </tr>
+            <% for (model.Transaction t : transactions) { %>
+            <tr>
+                <td><%=t.getTransactionId()%></td>
+                <td><%=t.getAccountNumber()%></td>
+                <td><%=t.getIfscCode()%></td>
+                <td><%=t.getBeneficiaryName()%></td>
+                <td><%=t.getSenderName()%></td>
+                <td><%=t.getTransactionDate()%></td>
+                <td><%=t.getAmount()%></td>
+                <td><%=t.getCurrency()%></td>
+                <td><%=t.getMode()%></td>
+                <td><%=t.getStatus()%></td>
+                <td><%=t.getReferenceNumber()%></td>
+                <td><%=t.getUtrNumber()%></td>
+                <td><%=t.getBranch()%></td>
+                <td><%=t.getDescription()%></td>
+                <td><%=t.getRemarks()%></td>
+            </tr>
+            <% } %>
+        </table>
+    <% } else if (transactions != null) { %>
+        <p>No records found.</p>
+    <% } %>
+
+    <!-- Pagination -->
+    <%
+        Integer page = (Integer) request.getAttribute("page");
+        if(page==null) page=1;
+    %>
+    <div class="pagination">
+        <form method="post" action="ReportServlet">
+            <input type="hidden" name="page" value="<%= page-1 %>"/>
+            <button type="submit" <%= (page<=1?"disabled":"") %>>Previous</button>
+        </form>
+        <span>Page <%= page %></span>
+        <form method="post" action="ReportServlet">
+            <input type="hidden" name="page" value="<%= page+1 %>"/>
+            <button type="submit">Next</button>
+        </form>
+    </div>
+</body>
+</html>

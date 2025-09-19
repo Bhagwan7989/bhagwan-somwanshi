@@ -1,0 +1,56 @@
+package servlet;
+import dao.TransactionDAO;
+import model.Transaction;
+import javax.servlet.*;
+import javax.servlet.http.*;
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+
+public class PdfExportServlet extends HttpServlet {
+    protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IOException {
+        try {
+            String from = req.getParameter("fromDate");
+            String to = req.getParameter("toDate");
+            double minAmt = Double.parseDouble(req.getParameter("minAmount"));
+            double maxAmt = Double.parseDouble(req.getParameter("maxAmount"));
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            List<Transaction> list = new TransactionDAO().getTransactions(sdf.parse(from), sdf.parse(to), minAmt, maxAmt);
+
+            res.setContentType("application/pdf");
+            res.setHeader("Content-Disposition", "attachment; filename=transactions.pdf");
+            Document doc = new Document(PageSize.A3.rotate()); // Wide layout
+            PdfWriter.getInstance(doc, res.getOutputStream());
+            doc.open();
+            doc.add(new Paragraph("Transaction Report", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, BaseColor.BLUE)));
+            doc.add(new Paragraph(" "));
+            
+            PdfPTable table = new PdfPTable(15);
+            table.setWidthPercentage(100);
+            String[] cols = {"ID","Account","IFSC","Beneficiary","Sender","Date","Amount","Currency","Mode","Status","Reference No","UTR No","Branch","Description","Remarks"};
+            for(String col: cols) table.addCell(new PdfPCell(new Phrase(col)));
+
+            for(Transaction t: list){
+                table.addCell(String.valueOf(t.getTransactionId()));
+                table.addCell(t.getAccountNumber());
+                table.addCell(t.getIfscCode());
+                table.addCell(t.getBeneficiaryName());
+                table.addCell(t.getSenderName());
+                table.addCell(t.getTransactionDate().toString());
+                table.addCell(String.valueOf(t.getAmount()));
+                table.addCell(t.getCurrency());
+                table.addCell(t.getMode());
+                table.addCell(t.getStatus());
+                table.addCell(t.getReferenceNumber());
+                table.addCell(t.getUtrNumber());
+                table.addCell(t.getBranch());
+                table.addCell(t.getDescription());
+                table.addCell(t.getRemarks());
+            }
+            doc.add(table);
+            doc.close();
+        } catch(Exception e){ e.printStackTrace(); }
+    }
+}

@@ -1,0 +1,57 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+
+import javax.servlet.*;
+import javax.servlet.http.*;
+import java.io.IOException;
+import java.util.*;
+
+public class ReportServlet extends HttpServlet {
+    private static final int PAGE_SIZE = 20;
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String accountNumber = request.getParameter("accountNumber");
+        String ifscCode = request.getParameter("ifscCode");
+        String status = request.getParameter("status");
+        String dateFrom = request.getParameter("dateFrom");
+        String dateTo = request.getParameter("dateTo");
+        String amountFrom = request.getParameter("amountFrom");
+        String amountTo = request.getParameter("amountTo");
+
+        if (dateFrom == null || dateFrom.isEmpty() || dateTo == null || dateTo.isEmpty()) {
+            request.setAttribute("error", "Date From and Date To are mandatory!");
+            request.getRequestDispatcher("index.jsp").forward(request, response);
+            return;
+        }
+
+        int page = 1;
+        if (request.getParameter("page") != null) {
+            page = Integer.parseInt(request.getParameter("page"));
+        }
+        int offset = (page - 1) * PAGE_SIZE;
+
+        TransactionDAO dao = new TransactionDAO();
+        try {
+            List<Transaction> transactions = dao.getTransactions(accountNumber, ifscCode, status,
+                    dateFrom, dateTo, amountFrom, amountTo, offset, PAGE_SIZE);
+
+            request.setAttribute("transactions", transactions);
+            request.setAttribute("page", page);
+
+            // retain filters
+            request.setAttribute("accountNumber", accountNumber);
+            request.setAttribute("ifscCode", ifscCode);
+            request.setAttribute("status", status);
+            request.setAttribute("dateFrom", dateFrom);
+            request.setAttribute("dateTo", dateTo);
+            request.setAttribute("amountFrom", amountFrom);
+            request.setAttribute("amountTo", amountTo);
+
+            request.getRequestDispatcher("index.jsp").forward(request, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}

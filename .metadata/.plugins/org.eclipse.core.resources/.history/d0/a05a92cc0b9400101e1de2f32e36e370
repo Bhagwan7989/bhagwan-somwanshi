@@ -1,0 +1,61 @@
+package servlet;
+
+import java.io.IOException;
+import java.util.List;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+
+import dao.TransactionDAO;
+import model.Transaction;
+
+public class PdfExportServlet extends HttpServlet {
+    @Override
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        TransactionDAO dao = new TransactionDAO();
+        List<Transaction> transactions = dao.getAllTransactions();
+
+        Document document = new Document();
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition","attachment; filename=transactions.pdf");
+
+        try {
+            PdfWriter.getInstance(document, response.getOutputStream());
+            document.open();
+            PdfPTable table = new PdfPTable(14);
+            table.setWidthPercentage(100);
+
+            String[] headers = {"ID","Account","IFSC","Bene Name","Sender","Date","Amount","Currency","Mode","Status","Reference","Branch","Description","Remarks"};
+            for(String h: headers) {
+                table.addCell(new PdfPCell(new Phrase(h)));
+            }
+
+            for(Transaction t : transactions) {
+                table.addCell(String.valueOf(t.getTransactionId()));
+                table.addCell(t.getAccountNumber());
+                table.addCell(t.getIfscCode());
+                table.addCell(t.getBeneficiaryName());
+                table.addCell(t.getSenderName());
+                table.addCell(t.getTransactionDate().toString());
+                table.addCell(String.valueOf(t.getAmount()));
+                table.addCell(t.getCurrency());
+                table.addCell(t.getMode());
+                table.addCell(t.getStatus());
+                table.addCell(t.getReferenceNumber());
+                table.addCell(t.getBranch());
+                table.addCell(t.getDescription());
+                table.addCell(t.getRemarks());
+            }
+
+            document.add(table);
+            document.close();
+        } catch (DocumentException e) {
+            e.printStackTrace();
+        }
+    }
+}

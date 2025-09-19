@@ -1,0 +1,101 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.*;
+import java.io.*;
+import java.util.*;
+import java.util.List;
+
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+
+public class PdfExportServlet extends HttpServlet {
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String accountNumber = request.getParameter("accountNumber");
+        String ifscCode = request.getParameter("ifscCode");
+        String status = request.getParameter("status");
+        String dateFrom = request.getParameter("dateFrom");
+        String dateTo = request.getParameter("dateTo");
+        String amountFrom = request.getParameter("amountFrom");
+        String amountTo = request.getParameter("amountTo");
+
+        TransactionDAO dao = new TransactionDAO();
+        try {
+            // fetch all matching records (no pagination for export)
+            List<Transaction> transactions = dao.getTransactions(
+                    accountNumber, ifscCode, status,
+                    dateFrom, dateTo, amountFrom, amountTo,
+                    0, Integer.MAX_VALUE
+            );
+
+            response.setContentType("application/pdf");
+            response.setHeader("Content-Disposition", "attachment; filename=TransactionReport.pdf");
+
+            Document document = new Document(PageSize.A4.rotate());
+            PdfWriter.getInstance(document, response.getOutputStream());
+            document.open();
+
+            // Title
+            Font titleFont = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD, BaseColor.BLACK);
+            Paragraph title = new Paragraph("Transaction Report", titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(20);
+            document.add(title);
+
+            // Table with 15 columns
+            PdfPTable table = new PdfPTable(15);
+            table.setWidthPercentage(100);
+            table.setSpacingBefore(10f);
+
+            // Define header font
+            Font headerFont = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, BaseColor.WHITE);
+            BaseColor headerColor = new BaseColor(59, 130, 246); // Tailwind blue-500
+
+            String[] headers = {
+                "ID", "Account", "IFSC", "Beneficiary", "Sender", "Date",
+                "Amount", "Currency", "Mode", "Status", "Reference",
+                "UTR", "Branch", "Description", "Remarks"
+            };
+
+            for (String h : headers) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, headerFont));
+                cell.setBackgroundColor(headerColor);
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cell.setPadding(6f);
+                table.addCell(cell);
+            }
+
+            // Row font
+            Font rowFont = new Font(Font.FontFamily.HELVETICA, 9, Font.NORMAL, BaseColor.BLACK);
+
+            for (Transaction t : transactions) {
+                table.addCell(new Phrase(String.valueOf(t.getTransactionId()), rowFont));
+                table.addCell(new Phrase(t.getAccountNumber(), rowFont));
+                table.addCell(new Phrase(t.getIfscCode(), rowFont));
+                table.addCell(new Phrase(t.getBeneficiaryName(), rowFont));
+                table.addCell(new Phrase(t.getSenderName(), rowFont));
+                table.addCell(new Phrase(String.valueOf(t.getTransactionDate()), rowFont));
+                table.addCell(new Phrase(String.valueOf(t.getAmount()), rowFont));
+                table.addCell(new Phrase(t.getCurrency(), rowFont));
+                table.addCell(new Phrase(t.getMode(), rowFont));
+                table.addCell(new Phrase(t.getStatus(), rowFont));
+                table.addCell(new Phrase(t.getReferenceNumber(), rowFont));
+                table.addCell(new Phrase(t.getUtrNumber(), rowFont)); // ✅ NEW FIELD
+                table.addCell(new Phrase(t.getBranch(), rowFont));
+                table.addCell(new Phrase(t.getDescription(), rowFont));
+                table.addCell(new Phrase(t.getRemarks(), rowFont));
+            }
+
+            document.add(table);
+            document.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ServletException("Error generating PDF", e);
+        }
+    }
+}

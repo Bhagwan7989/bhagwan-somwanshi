@@ -1,0 +1,85 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+
+import javax.servlet.*;
+import javax.servlet.http.*;
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.List;
+
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+
+public class PdfExportServlet extends HttpServlet {
+    protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+        try {
+            HttpSession session = req.getSession(false);
+            Date fromDate = (Date) session.getAttribute("fromDate");
+            Date toDate = (Date) session.getAttribute("toDate");
+            Double minAmt = (Double) session.getAttribute("minAmt");
+            Double maxAmt = (Double) session.getAttribute("maxAmt");
+
+            if (fromDate == null || toDate == null) {
+                res.getWriter().println("⚠ No report generated yet!");
+                return;
+            }
+
+            List<Transaction> list = new TransactionDAO().getTransactions(fromDate, toDate, minAmt, maxAmt);
+
+            res.setContentType("application/pdf");
+            res.setHeader("Content-Disposition", "attachment; filename=transactions.pdf");
+
+            Document doc = new Document(PageSize.A4.rotate());
+            PdfWriter.getInstance(doc, res.getOutputStream());
+            doc.open();
+
+            Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16);
+            Paragraph title = new Paragraph("Transaction Report", titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            doc.add(title);
+            doc.add(new Paragraph("Generated on: " + new Date()));
+            doc.add(Chunk.NEWLINE);
+
+            PdfPTable table = new PdfPTable(15);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{3,8,6,10,10,8,7,6,6,6,10,8,8,12,12});
+
+            String[] headers = {"ID","Account","IFSC","Beneficiary","Sender","Date","Amount","Currency",
+                                "Mode","Status","Ref No","UTR","Branch","Description","Remarks"};
+            for(String h : headers){
+                PdfPCell cell = new PdfPCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10)));
+                cell.setBackgroundColor(BaseColor.LIGHT_GRAY);
+                table.addCell(cell);
+            }
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            for(Transaction t : list){
+                table.addCell(String.valueOf(t.getTransactionId()));
+                table.addCell(t.getAccountNumber());
+                table.addCell(t.getIfscCode());
+                table.addCell(t.getBeneficiaryName());
+                table.addCell(t.getSenderName());
+                table.addCell(sdf.format(t.getTransactionDate()));
+                table.addCell(String.valueOf(t.getAmount()));
+                table.addCell(t.getCurrency());
+                table.addCell(t.getMode());
+                table.addCell(t.getStatus());
+                table.addCell(t.getReferenceNumber());
+                table.addCell(t.getUtrNumber());
+                table.addCell(t.getBranch());
+                table.addCell(t.getDescription());
+                table.addCell(t.getRemarks());
+            }
+
+            doc.add(table);
+            doc.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            res.getWriter().println("⚠ Error exporting PDF!");
+        }
+    }
+}

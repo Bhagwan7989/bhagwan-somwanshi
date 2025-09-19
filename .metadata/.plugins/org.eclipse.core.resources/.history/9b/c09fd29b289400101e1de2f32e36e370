@@ -1,0 +1,190 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.util.*, model.Transaction" %>
+<%
+    List<Transaction> transactions = (List<Transaction>) request.getAttribute("transactions");
+
+    Integer pageObj = (Integer) request.getAttribute("page");
+    int currentPage = (pageObj != null) ? pageObj : 1;
+
+    Integer totalPagesObj = (Integer) request.getAttribute("totalPages");
+    int totalPages = (totalPagesObj != null) ? totalPagesObj : 1;
+
+    // helper to read preserved values set by servlet
+    String sStart = request.getAttribute("startDate") != null ? (String) request.getAttribute("startDate") : "";
+    String sEnd = request.getAttribute("endDate") != null ? (String) request.getAttribute("endDate") : "";
+    String sStatus = request.getAttribute("status") != null ? (String) request.getAttribute("status") : "";
+    String sMin = request.getAttribute("minAmount") != null ? (String) request.getAttribute("minAmount") : "";
+    String sMax = request.getAttribute("maxAmount") != null ? (String) request.getAttribute("maxAmount") : "";
+    String sAccount = request.getAttribute("accountNumber") != null ? (String) request.getAttribute("accountNumber") : "";
+    String sIfsc = request.getAttribute("ifscCode") != null ? (String) request.getAttribute("ifscCode") : "";
+%>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Transaction Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; background:#f8f9fa; padding:20px; }
+        h2 { text-align:center; color:#1f2937; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .filter-form { background:#fff; padding:18px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.08); margin-bottom:16px; display:flex; flex-direction:column; gap:12px; }
+        .row { display:flex; gap:12px; align-items:center; }
+        .col { flex:1; display:flex; flex-direction:column; }
+        label { font-weight:600; margin-bottom:6px; color:#374151; }
+        input, select { padding:8px; border-radius:6px; border:1px solid #d1d5db; }
+        .actions { display:flex; gap:10px; justify-content:flex-start; margin-top:6px; }
+        button { background:#2563eb; color:#fff; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:bold; }
+        button.secondary { background:#10b981; }
+        .export { margin-left:auto; }
+        table { width:100%; border-collapse:collapse; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.06); margin-top:12px; }
+        th { background:#2563eb; color:#fff; padding:10px; text-align:center; }
+        td { padding:8px; border-bottom:1px solid #eef2f7; text-align:center; }
+        tr:hover td { background:#f3f7fb; }
+        .pagination { display:flex; gap:8px; justify-content:center; align-items:center; margin-top:12px; }
+        .msg { color:#b91c1c; text-align:center; font-weight:bold; margin-top:10px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Transaction Report</h2>
+
+    <form class="filter-form" action="ReportServlet" method="post">
+        <div class="row">
+            <div class="col">
+                <label>Start Date (required)</label>
+                <input type="date" name="startDate" value="<%= sStart %>" required />
+            </div>
+            <div class="col">
+                <label>End Date (required)</label>
+                <input type="date" name="endDate" value="<%= sEnd %>" required />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <label>Status</label>
+                <select name="status">
+                    <option value="">All</option>
+                    <option value="SUCCESS" <%= "SUCCESS".equalsIgnoreCase(sStatus) ? "selected" : "" %>>SUCCESS</option>
+                    <option value="FAILED" <%= "FAILED".equalsIgnoreCase(sStatus) ? "selected" : "" %>>FAILED</option>
+                </select>
+            </div>
+            <div class="col">
+                <label>Account Number</label>
+                <input type="text" name="accountNumber" value="<%= sAccount %>" placeholder="Account number" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <label>IFSC Code</label>
+                <input type="text" name="ifscCode" value="<%= sIfsc %>" placeholder="IFSC code" />
+            </div>
+            <div class="col">
+                <label>Amount Min</label>
+                <input type="number" step="0.01" name="minAmount" value="<%= sMin %>" placeholder="Min amount" />
+            </div>
+            <div class="col">
+                <label>Amount Max</label>
+                <input type="number" step="0.01" name="maxAmount" value="<%= sMax %>" placeholder="Max amount" />
+            </div>
+        </div>
+
+        <div class="row actions">
+            <button type="submit">Generate Report</button>
+            <!-- Export posts to the export servlets with current filters -->
+            <div class="export">
+                <form action="ExcelExportServlet" method="post" style="display:inline;">
+                    <input type="hidden" name="startDate" value="<%= sStart %>"/>
+                    <input type="hidden" name="endDate" value="<%= sEnd %>"/>
+                    <input type="hidden" name="status" value="<%= sStatus %>"/>
+                    <input type="hidden" name="minAmount" value="<%= sMin %>"/>
+                    <input type="hidden" name="maxAmount" value="<%= sMax %>"/>
+                    <input type="hidden" name="accountNumber" value="<%= sAccount %>"/>
+                    <input type="hidden" name="ifscCode" value="<%= sIfsc %>"/>
+                    <button type="submit" class="secondary">Export Excel</button>
+                </form>
+                <form action="PdfExportServlet" method="post" style="display:inline;">
+                    <input type="hidden" name="startDate" value="<%= sStart %>"/>
+                    <input type="hidden" name="endDate" value="<%= sEnd %>"/>
+                    <input type="hidden" name="status" value="<%= sStatus %>"/>
+                    <input type="hidden" name="minAmount" value="<%= sMin %>"/>
+                    <input type="hidden" name="maxAmount" value="<%= sMax %>"/>
+                    <input type="hidden" name="accountNumber" value="<%= sAccount %>"/>
+                    <input type="hidden" name="ifscCode" value="<%= sIfsc %>"/>
+                    <button type="submit">Export PDF</button>
+                </form>
+            </div>
+        </div>
+    </form>
+
+    <% if (request.getAttribute("error") != null) { %>
+        <div class="msg"><%= request.getAttribute("error") %></div>
+    <% } %>
+
+    <% if (transactions != null && !transactions.isEmpty()) { %>
+        <table>
+            <tr>
+                <th>ID</th><th>UTR No</th><th>Account</th><th>IFSC</th><th>Beneficiary</th><th>Sender</th>
+                <th>Date</th><th>Amount</th><th>Currency</th><th>Mode</th><th>Status</th><th>Reference</th><th>Branch</th><th>Description</th><th>Remarks</th>
+            </tr>
+            <% for (Transaction t : transactions) { %>
+                <tr>
+                    <td><%= t.getTransactionId() %></td>
+                    <td><%= t.getUtrNumber() %></td>
+                    <td><%= t.getAccountNumber() %></td>
+                    <td><%= t.getIfscCode() %></td>
+                    <td><%= t.getBeneficiaryName() %></td>
+                    <td><%= t.getSenderName() %></td>
+                    <td><%= t.getTransactionDate() %></td>
+                    <td><%= t.getAmount() %></td>
+                    <td><%= t.getCurrency() %></td>
+                    <td><%= t.getMode() %></td>
+                    <td><%= t.getStatus() %></td>
+                    <td><%= t.getReferenceNumber() %></td>
+                    <td><%= t.getBranch() %></td>
+                    <td><%= t.getDescription() %></td>
+                    <td><%= t.getRemarks() %></td>
+                </tr>
+            <% } %>
+        </table>
+
+        <div class="pagination">
+            <% if (currentPage > 1) { %>
+                <form action="ReportServlet" method="post" style="display:inline;">
+                    <!-- preserve filters in paging -->
+                    <input type="hidden" name="startDate" value="<%= sStart %>"/>
+                    <input type="hidden" name="endDate" value="<%= sEnd %>"/>
+                    <input type="hidden" name="status" value="<%= sStatus %>"/>
+                    <input type="hidden" name="minAmount" value="<%= sMin %>"/>
+                    <input type="hidden" name="maxAmount" value="<%= sMax %>"/>
+                    <input type="hidden" name="accountNumber" value="<%= sAccount %>"/>
+                    <input type="hidden" name="ifscCode" value="<%= sIfsc %>"/>
+                    <input type="hidden" name="page" value="<%= currentPage - 1 %>"/>
+                    <button type="submit">Previous</button>
+                </form>
+            <% } %>
+
+            <span>Page <%= currentPage %> of <%= totalPages %></span>
+
+            <% if (currentPage < totalPages) { %>
+                <form action="ReportServlet" method="post" style="display:inline;">
+                    <input type="hidden" name="startDate" value="<%= sStart %>"/>
+                    <input type="hidden" name="endDate" value="<%= sEnd %>"/>
+                    <input type="hidden" name="status" value="<%= sStatus %>"/>
+                    <input type="hidden" name="minAmount" value="<%= sMin %>"/>
+                    <input type="hidden" name="maxAmount" value="<%= sMax %>"/>
+                    <input type="hidden" name="accountNumber" value="<%= sAccount %>"/>
+                    <input type="hidden" name="ifscCode" value="<%= sIfsc %>"/>
+                    <input type="hidden" name="page" value="<%= currentPage + 1 %>"/>
+                    <button type="submit">Next</button>
+                </form>
+            <% } %>
+        </div>
+    <% } else if (transactions != null) { %>
+        <div class="msg">No records found for the chosen filters.</div>
+    <% } %>
+
+</div>
+</body>
+</html>

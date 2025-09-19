@@ -1,0 +1,76 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+
+import javax.servlet.*;
+import javax.servlet.http.*;
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+public class ExcelExportServlet extends HttpServlet {
+    protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+        try {
+            // Read last filter values from session
+            HttpSession session = req.getSession(false);
+            Date fromDate = (Date) session.getAttribute("fromDate");
+            Date toDate = (Date) session.getAttribute("toDate");
+            Double minAmt = (Double) session.getAttribute("minAmt");
+            Double maxAmt = (Double) session.getAttribute("maxAmt");
+
+            if (fromDate == null || toDate == null) {
+                res.getWriter().println("⚠ No report generated yet!");
+                return;
+            }
+
+            List<Transaction> list = new TransactionDAO().getTransactions(fromDate, toDate, minAmt, maxAmt);
+
+            res.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            res.setHeader("Content-Disposition", "attachment; filename=transactions.xlsx");
+
+            Workbook wb = new XSSFWorkbook();
+            Sheet sheet = wb.createSheet("Transactions");
+
+            // Header
+            String[] headers = {"ID","Account","IFSC","Beneficiary","Sender","Date","Amount","Currency",
+                                "Mode","Status","Ref No","UTR","Branch","Description","Remarks"};
+            Row headerRow = sheet.createRow(0);
+            for(int i=0;i<headers.length;i++){
+                Cell c = headerRow.createCell(i);
+                c.setCellValue(headers[i]);
+            }
+
+            // Data
+            int rowIdx = 1;
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            for(Transaction t : list){
+                Row r = sheet.createRow(rowIdx++);
+                r.createCell(0).setCellValue(t.getTransactionId());
+                r.createCell(1).setCellValue(t.getAccountNumber());
+                r.createCell(2).setCellValue(t.getIfscCode());
+                r.createCell(3).setCellValue(t.getBeneficiaryName());
+                r.createCell(4).setCellValue(t.getSenderName());
+                r.createCell(5).setCellValue(sdf.format(t.getTransactionDate()));
+                r.createCell(6).setCellValue(t.getAmount());
+                r.createCell(7).setCellValue(t.getCurrency());
+                r.createCell(8).setCellValue(t.getMode());
+                r.createCell(9).setCellValue(t.getStatus());
+                r.createCell(10).setCellValue(t.getReferenceNumber());
+                r.createCell(11).setCellValue(t.getUtrNumber());
+                r.createCell(12).setCellValue(t.getBranch());
+                r.createCell(13).setCellValue(t.getDescription());
+                r.createCell(14).setCellValue(t.getRemarks());
+            }
+
+            wb.write(res.getOutputStream());
+            wb.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            res.getWriter().println("⚠ Error exporting Excel!");
+        }
+    }
+}

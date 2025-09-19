@@ -1,0 +1,28 @@
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="3.1">
+    <servlet>
+        <servlet-name>ReportServlet</servlet-name>
+        <servlet-class>servlet.ReportServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ReportServlet</servlet-name>
+        <url-pattern>/ReportServlet</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ExcelExportServlet</servlet-name>
+        <servlet-class>servlet.ExcelExportServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ExcelExportServlet</servlet-name>
+        <url-pattern>/ExcelExportServlet</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>PdfExportServlet</servlet-name>
+        <servlet-class>servlet.PdfExportServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>PdfExportServlet</servlet-name>
+        <url-pattern>/PdfExportServlet</url-pattern>
+    </servlet-mapping>
+</web-app>

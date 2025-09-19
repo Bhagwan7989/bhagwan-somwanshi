@@ -1,0 +1,84 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.*;
+import java.io.*;
+import java.util.List;
+
+public class ExcelExportServlet extends HttpServlet {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // read same filter params
+        String startDate = trim(request.getParameter("startDate"));
+        String endDate = trim(request.getParameter("endDate"));
+        String status = trim(request.getParameter("status"));
+        String minAmount = trim(request.getParameter("minAmount"));
+        String maxAmount = trim(request.getParameter("maxAmount"));
+        String accountNumber = trim(request.getParameter("accountNumber"));
+        String ifscCode = trim(request.getParameter("ifscCode"));
+
+        // validate mandatory dates
+        if (startDate == null || startDate.isEmpty() || endDate == null || endDate.isEmpty()) {
+            response.setContentType("text/plain");
+            response.getWriter().write("Date From and Date To are required to export.");
+            return;
+        }
+
+        TransactionDAO dao = new TransactionDAO();
+        List<Transaction> data = dao.getFilteredTransactions(startDate, endDate, status, minAmount, maxAmount, accountNumber, ifscCode);
+
+        try (Workbook wb = new XSSFWorkbook()) {
+            Sheet sheet = wb.createSheet("Transactions");
+            String[] headers = {"ID","UTR No","Account","IFSC","Beneficiary","Sender","Date","Amount","Currency","Mode","Status","Reference","Branch","Description","Remarks"};
+            Row headerRow = sheet.createRow(0);
+            CellStyle headerStyle = wb.createCellStyle();
+            Font headerFont = wb.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+
+            for (int i = 0; i < headers.length; i++) {
+                Cell c = headerRow.createCell(i);
+                c.setCellValue(headers[i]);
+                c.setCellStyle(headerStyle);
+            }
+
+            int r = 1;
+            for (Transaction t : data) {
+                Row row = sheet.createRow(r++);
+                row.createCell(0).setCellValue(t.getTransactionId());
+                row.createCell(1).setCellValue(nullSafe(t.getUtrNumber()));
+                row.createCell(2).setCellValue(nullSafe(t.getAccountNumber()));
+                row.createCell(3).setCellValue(nullSafe(t.getIfscCode()));
+                row.createCell(4).setCellValue(nullSafe(t.getBeneficiaryName()));
+                row.createCell(5).setCellValue(nullSafe(t.getSenderName()));
+                row.createCell(6).setCellValue(t.getTransactionDate() != null ? t.getTransactionDate().toString() : "");
+                row.createCell(7).setCellValue(t.getAmount() != null ? t.getAmount().doubleValue() : 0.0);
+                row.createCell(8).setCellValue(nullSafe(t.getCurrency()));
+                row.createCell(9).setCellValue(nullSafe(t.getMode()));
+                row.createCell(10).setCellValue(nullSafe(t.getStatus()));
+                row.createCell(11).setCellValue(nullSafe(t.getReferenceNumber()));
+                row.createCell(12).setCellValue(nullSafe(t.getBranch()));
+                row.createCell(13).setCellValue(nullSafe(t.getDescription()));
+                row.createCell(14).setCellValue(nullSafe(t.getRemarks()));
+            }
+
+            for (int i = 0; i < headers.length; i++) sheet.autoSizeColumn(i);
+
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=transactions.xlsx");
+            try (OutputStream out = response.getOutputStream()) {
+                wb.write(out);
+                out.flush();
+            }
+        } catch (Exception ex) {
+            throw new ServletException("Error exporting Excel", ex);
+        }
+    }
+
+    private String trim(String s) { return s == null ? null : s.trim(); }
+    private String nullSafe(String s) { return s == null ? "" : s; }
+}

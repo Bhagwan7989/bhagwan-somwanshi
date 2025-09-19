@@ -1,0 +1,65 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.*;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+@WebServlet("/ReportServlet")
+public class ReportServlet extends HttpServlet {
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+
+        // Parse filters from request
+        String fromDateStr = req.getParameter("fromDate");
+        String toDateStr   = req.getParameter("toDate");
+        String minAmtStr   = req.getParameter("minAmt");
+        String maxAmtStr   = req.getParameter("maxAmt");
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Date fromDate = null, toDate = null;
+        Double minAmt = null, maxAmt = null;
+
+        try {
+            if (fromDateStr != null && !fromDateStr.isEmpty()) {
+                fromDate = sdf.parse(fromDateStr);
+            }
+            if (toDateStr != null && !toDateStr.isEmpty()) {
+                toDate = sdf.parse(toDateStr);
+            }
+            if (minAmtStr != null && !minAmtStr.isEmpty()) {
+                minAmt = Double.parseDouble(minAmtStr);
+            }
+            if (maxAmtStr != null && !maxAmtStr.isEmpty()) {
+                maxAmt = Double.parseDouble(maxAmtStr);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // ✅ Save filters into session for reuse in Excel/PDF exports
+        HttpSession session = req.getSession();
+        session.setAttribute("fromDate", fromDate);
+        session.setAttribute("toDate", toDate);
+        session.setAttribute("minAmt", minAmt);
+        session.setAttribute("maxAmt", maxAmt);
+
+        // Fetch data using DAO
+        TransactionDAO dao = new TransactionDAO();
+        List<Transaction> transactions = dao.getTransactions(fromDate, toDate, minAmt, maxAmt);
+
+        // Attach data to request scope
+        req.setAttribute("transactions", transactions);
+
+        // Forward back to JSP (same page report display)
+        req.getRequestDispatcher("index.jsp").forward(req, resp);
+    }
+}

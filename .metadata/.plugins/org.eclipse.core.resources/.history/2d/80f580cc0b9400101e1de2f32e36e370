@@ -1,0 +1,59 @@
+<%@ page import="java.util.*, model.Transaction" %>
+<%@ page contentType="text/html;charset=UTF-8" %>
+
+<html>
+<head>
+    <title>Transaction Report</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .btn { margin: 5px; padding: 5px 10px; }
+    </style>
+</head>
+<body>
+    <h2>Transaction Report</h2>
+    <form method="post" action="ReportServlet">
+        <input type="submit" name="submit" value="Show Report" class="btn"/>
+        <a href="ExcelExportServlet" class="btn">Export Excel</a>
+        <a href="PdfExportServlet" class="btn">Export PDF</a>
+    </form>
+
+    <%
+        List<Transaction> transactions = (List<Transaction>) request.getAttribute("transactions");
+        if(transactions != null) {
+    %>
+    <table>
+        <tr>
+            <th>ID</th><th>Account</th><th>IFSC</th><th>Bene Name</th><th>Sender</th><th>Date</th>
+            <th>Amount</th><th>Currency</th><th>Mode</th><th>Status</th><th>Reference</th>
+            <th>Branch</th><th>Description</th><th>Remarks</th>
+        </tr>
+        <%
+            for(Transaction t : transactions){
+        %>
+        <tr>
+            <td><%=t.getTransactionId()%></td>
+            <td><%=t.getAccountNumber()%></td>
+            <td><%=t.getIfscCode()%></td>
+            <td><%=t.getBeneficiaryName()%></td>
+            <td><%=t.getSenderName()%></td>
+            <td><%=t.getTransactionDate()%></td>
+            <td><%=t.getAmount()%></td>
+            <td><%=t.getCurrency()%></td>
+            <td><%=t.getMode()%></td>
+            <td><%=t.getStatus()%></td>
+            <td><%=t.getReferenceNumber()%></td>
+            <td><%=t.getBranch()%></td>
+            <td><%=t.getDescription()%></td>
+            <td><%=t.getRemarks()%></td>
+        </tr>
+        <%
+            }
+        %>
+    </table>
+    <%
+        }
+    %>
+</body>
+</html>

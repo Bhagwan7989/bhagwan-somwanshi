@@ -1,0 +1,120 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="java.util.List" %>
+<%@ page import="model.Transaction" %>
+<%
+    List<Transaction> transactions = (List<Transaction>) request.getAttribute("transactions");
+    String fromDate = request.getParameter("fromDate") != null ? request.getParameter("fromDate") : "";
+    String toDate   = request.getParameter("toDate") != null ? request.getParameter("toDate") : "";
+    String minAmt   = request.getParameter("minAmt") != null ? request.getParameter("minAmt") : "";
+    String maxAmt   = request.getParameter("maxAmt") != null ? request.getParameter("maxAmt") : "";
+    String accountNumber = request.getParameter("accountNumber") != null ? request.getParameter("accountNumber") : "";
+    String ifscCode     = request.getParameter("ifscCode") != null ? request.getParameter("ifscCode") : "";
+    String status       = request.getParameter("status") != null ? request.getParameter("status") : "";
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Transaction Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(120deg, #f6f9fc, #eef2f7); }
+        .card { border-radius: 15px; box-shadow: 0 6px 18px rgba(0,0,0,0.1); transition: transform 0.3s ease-in-out; }
+        .card:hover { transform: translateY(-5px); }
+        table { animation: fadeIn 1s ease-in-out; }
+        @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+    </style>
+</head>
+<body>
+<div class="container py-4">
+    <div class="card p-4">
+        <h2 class="text-center mb-4">💳 Transaction Report</h2>
+
+        <!-- Filter Form -->
+        <form action="ReportServlet" method="post" class="row g-3 mb-4">
+            <div class="col-md-2">
+                <label class="form-label">From Date *</label>
+                <input type="date" name="fromDate" class="form-control" required value="<%=fromDate%>">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">To Date *</label>
+                <input type="date" name="toDate" class="form-control" required value="<%=toDate%>">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Min Amount</label>
+                <input type="number" step="0.01" name="minAmt" class="form-control" value="<%=minAmt%>">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Max Amount</label>
+                <input type="number" step="0.01" name="maxAmt" class="form-control" value="<%=maxAmt%>">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Account Number</label>
+                <input type="text" name="accountNumber" class="form-control" value="<%=accountNumber%>">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">IFSC Code</label>
+                <input type="text" name="ifscCode" class="form-control" value="<%=ifscCode%>">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Payment Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All</option>
+                    <option value="Success" <%= "Success".equals(status)?"selected":"" %>>Success</option>
+                    <option value="Pending" <%= "Pending".equals(status)?"selected":"" %>>Pending</option>
+                    <option value="Failed" <%= "Failed".equals(status)?"selected":"" %>>Failed</option>
+                </select>
+            </div>
+            <div class="col-12 text-center">
+                <button type="submit" class="btn btn-primary px-4">🔍 Submit</button>
+            </div>
+        </form>
+
+        <!-- Results -->
+        <% if (transactions != null) { %>
+            <div class="d-flex justify-content-between mb-3">
+                <h5>Results: <%= transactions.size() %> records</h5>
+                <div>
+                    <a href="ExcelExportServlet" class="btn btn-success btn-sm">⬇️ Export Excel</a>
+                    <a href="PdfExportServlet" class="btn btn-danger btn-sm">⬇️ Export PDF</a>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th><th>Account No</th><th>IFSC</th><th>Beneficiary</th><th>Sender</th>
+                            <th>Date</th><th>Amount</th><th>Currency</th><th>Mode</th><th>Status</th>
+                            <th>Reference</th><th>UTR</th><th>Branch</th><th>Description</th><th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% for (Transaction t : transactions) { %>
+                            <tr>
+                                <td><%= t.getTransactionId() %></td>
+                                <td><%= t.getAccountNumber() %></td>
+                                <td><%= t.getIfscCode() %></td>
+                                <td><%= t.getBeneficiaryName() %></td>
+                                <td><%= t.getSenderName() %></td>
+                                <td><%= t.getTransactionDate()!=null? new java.text.SimpleDateFormat("dd-MM-yyyy").format(t.getTransactionDate()) : "" %></td>
+                                <td><%= t.getAmount() %></td>
+                                <td><%= t.getCurrency() %></td>
+                                <td><%= t.getMode() %></td>
+                                <td><%= t.getStatus() %></td>
+                                <td><%= t.getReferenceNumber() %></td>
+                                <td><%= t.getUtrNumber() %></td>
+                                <td><%= t.getBranch() %></td>
+                                <td><%= t.getDescription() %></td>
+                                <td><%= t.getRemarks() %></td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        <% } %>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

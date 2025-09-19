@@ -1,0 +1,98 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.*;
+import java.io.IOException;
+import java.util.List;
+
+public class ExcelExportServlet extends HttpServlet {
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Read filter parameters
+        String startDate = trim(request.getParameter("startDate"));
+        String endDate = trim(request.getParameter("endDate"));
+        String status = trim(request.getParameter("status"));
+        String minAmount = trim(request.getParameter("minAmount"));
+        String maxAmount = trim(request.getParameter("maxAmount"));
+        String accountNumber = trim(request.getParameter("accountNumber"));
+        String ifscCode = trim(request.getParameter("ifscCode"));
+
+        // Validate mandatory dates
+        if (startDate == null || startDate.isEmpty() || endDate == null || endDate.isEmpty()) {
+            response.setContentType("text/plain");
+            response.getWriter().write("Date From and Date To are required to export.");
+            return;
+        }
+
+        TransactionDAO dao = new TransactionDAO();
+        List<Transaction> data = dao.getFilteredTransactions(
+                startDate, endDate, status, minAmount, maxAmount, accountNumber, ifscCode
+        );
+
+        // Create Excel workbook
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Transactions");
+
+        // Header style
+        CellStyle headerStyle = workbook.createCellStyle();
+        Font headerFont = workbook.createFont();
+        headerFont.setBold(true);
+        headerStyle.setFont(headerFont);
+
+        // Create header row
+        Row header = sheet.createRow(0);
+        String[] headers = {"ID","UTR No","Account","IFSC","Beneficiary","Sender","Date","Amount","Currency",
+                "Mode","Status","Reference","Branch","Description","Remarks"};
+
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = header.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(headerStyle);
+        }
+
+        // Data rows
+        int rowNum = 1;
+        for (Transaction t : data) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(t.getTransactionId());
+            row.createCell(1).setCellValue(nullSafe(t.getUtrNumber()));
+            row.createCell(2).setCellValue(nullSafe(t.getAccountNumber()));
+            row.createCell(3).setCellValue(nullSafe(t.getIfscCode()));
+            row.createCell(4).setCellValue(nullSafe(t.getBeneficiaryName()));
+            row.createCell(5).setCellValue(nullSafe(t.getSenderName()));
+            row.createCell(6).setCellValue(t.getTransactionDate() != null ? t.getTransactionDate().toString() : "");
+            row.createCell(7).setCellValue(t.getAmount()); // primitive double
+            row.createCell(8).setCellValue(nullSafe(t.getCurrency()));
+            row.createCell(9).setCellValue(nullSafe(t.getMode()));
+            row.createCell(10).setCellValue(nullSafe(t.getStatus()));
+            row.createCell(11).setCellValue(nullSafe(t.getReferenceNumber()));
+            row.createCell(12).setCellValue(nullSafe(t.getBranch()));
+            row.createCell(13).setCellValue(nullSafe(t.getDescription()));
+            row.createCell(14).setCellValue(nullSafe(t.getRemarks()));
+        }
+
+        // Auto-size columns
+        for (int i = 0; i < headers.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        // Set response headers
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=transactions.xlsx");
+
+        // Write workbook to output stream
+        workbook.write(response.getOutputStream());
+        workbook.close();
+    }
+
+    // Null-safe helper
+    private String nullSafe(String s) { return s == null ? "" : s; }
+
+    // Trim helper
+    private String trim(String s) { return s == null ? null : s.trim(); }
+}

@@ -1,0 +1,80 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.*;
+import java.io.IOException;
+import java.util.List;
+
+public class ReportServlet extends HttpServlet {
+    private static final int PAGE_SIZE = 20;
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Read parameters (same names used in index.jsp)
+        String startDate = trim(request.getParameter("startDate"));
+        String endDate = trim(request.getParameter("endDate"));
+        String status = trim(request.getParameter("status"));
+        String minAmount = trim(request.getParameter("minAmount"));
+        String maxAmount = trim(request.getParameter("maxAmount"));
+        String accountNumber = trim(request.getParameter("accountNumber"));
+        String ifscCode = trim(request.getParameter("ifscCode"));
+
+        // pagination param
+        int page = 1;
+        String pageParam = request.getParameter("page");
+        if (pageParam != null) {
+            try { page = Math.max(1, Integer.parseInt(pageParam)); } catch (NumberFormatException ignored) {}
+        }
+
+        // validate mandatory dates
+        if (startDate == null || startDate.isEmpty() || endDate == null || endDate.isEmpty()) {
+            request.setAttribute("error", "Date From and Date To are required to generate report.");
+            // preserve inputs
+            preserveInputs(request, startDate, endDate, status, minAmount, maxAmount, accountNumber, ifscCode);
+            request.getRequestDispatcher("index.jsp").forward(request, response);
+            return;
+        }
+
+        TransactionDAO dao = new TransactionDAO();
+
+        // total count and pages
+        int totalRecords = dao.getFilteredCount(startDate, endDate, status, minAmount, maxAmount, accountNumber, ifscCode);
+        int totalPages = (int) Math.ceil(totalRecords / (double) PAGE_SIZE);
+        if (totalPages == 0) totalPages = 1;
+        if (page > totalPages) page = totalPages;
+
+        // fetch paged results
+        List<Transaction> transactions = dao.getFilteredTransactions(startDate, endDate, status, minAmount, maxAmount, accountNumber, ifscCode, page, PAGE_SIZE);
+
+        // set attributes for JSP
+        request.setAttribute("transactions", transactions);
+        request.setAttribute("page", page);
+        request.setAttribute("totalPages", totalPages);
+        request.setAttribute("totalRecords", totalRecords);
+
+        preserveInputs(request, startDate, endDate, status, minAmount, maxAmount, accountNumber, ifscCode);
+
+        request.getRequestDispatcher("index.jsp").forward(request, response);
+    }
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // treat GET same as POST for convenience (so pagination links using GET/POST both work)
+        doPost(request, response);
+    }
+
+    private void preserveInputs(HttpServletRequest req, String startDate, String endDate, String status, String minAmount, String maxAmount, String accountNumber, String ifscCode) {
+        req.setAttribute("startDate", startDate);
+        req.setAttribute("endDate", endDate);
+        req.setAttribute("status", status);
+        req.setAttribute("minAmount", minAmount);
+        req.setAttribute("maxAmount", maxAmount);
+        req.setAttribute("accountNumber", accountNumber);
+        req.setAttribute("ifscCode", ifscCode);
+    }
+
+    private String trim(String s) {
+        return s == null ? null : s.trim();
+    }
+}

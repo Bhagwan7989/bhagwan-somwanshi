@@ -1,0 +1,52 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.*;
+import java.io.IOException;
+import java.util.List;
+
+
+public class ReportServlet extends HttpServlet {
+
+    private static final int PAGE_SIZE = 20; // rows per page
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String startDate = request.getParameter("startDate");
+        String endDate = request.getParameter("endDate");
+        String status = request.getParameter("status");
+        String minAmount = request.getParameter("minAmount");
+        String maxAmount = request.getParameter("maxAmount");
+        String accountNumber = request.getParameter("accountNumber");
+        String ifscCode = request.getParameter("ifscCode");
+
+        int page = 1;
+        String pageStr = request.getParameter("page");
+        if (pageStr != null && !pageStr.isEmpty()) {
+            page = Integer.parseInt(pageStr);
+        }
+
+        TransactionDAO dao = new TransactionDAO();
+        List<Transaction> transactions = dao.getFilteredTransactions(
+                startDate, endDate, status, minAmount, maxAmount,
+                accountNumber, ifscCode, page, PAGE_SIZE
+        );
+
+        request.setAttribute("transactions", transactions);
+        request.setAttribute("startDate", startDate);
+        request.setAttribute("endDate", endDate);
+        request.setAttribute("status", status);
+        request.setAttribute("minAmount", minAmount);
+        request.setAttribute("maxAmount", maxAmount);
+        request.setAttribute("accountNumber", accountNumber);
+        request.setAttribute("ifscCode", ifscCode);
+        request.setAttribute("page", page);
+
+        request.getRequestDispatcher("index.jsp").forward(request, response);
+    }
+}

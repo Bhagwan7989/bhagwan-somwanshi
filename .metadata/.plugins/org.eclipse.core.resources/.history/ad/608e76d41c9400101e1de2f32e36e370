@@ -1,0 +1,85 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+import javax.servlet.*;
+import javax.servlet.http.*;
+import java.io.*;
+import java.util.List;
+
+public class PdfExportServlet extends HttpServlet {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String accountNumber = trimParam(request.getParameter("accountNumber"));
+        String ifscCode = trimParam(request.getParameter("ifscCode"));
+        String status = trimParam(request.getParameter("status"));
+        String dateFrom = trimParam(request.getParameter("dateFrom"));
+        String dateTo = trimParam(request.getParameter("dateTo"));
+        String amountMin = trimParam(request.getParameter("amountMin"));
+        String amountMax = trimParam(request.getParameter("amountMax"));
+
+        if (dateFrom == null || dateFrom.isEmpty() || dateTo == null || dateTo.isEmpty()) {
+            response.setContentType("text/plain");
+            response.getWriter().write("Date From and Date To are required to export.");
+            return;
+        }
+
+        TransactionDAO dao = new TransactionDAO();
+        int totalRecords = dao.getFilteredCount(accountNumber, ifscCode, status, dateFrom, dateTo, amountMin, amountMax);
+        int pageSize = (totalRecords > 0) ? totalRecords : 1;
+        List<Transaction> transactions = dao.getFilteredTransactions(accountNumber, ifscCode, status, dateFrom, dateTo, amountMin, amountMax, 1, pageSize);
+
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=transactions.pdf");
+
+        Document document = new Document(PageSize.A4.rotate(), 20, 20, 20, 20);
+        try {
+            PdfWriter.getInstance(document, response.getOutputStream());
+            document.open();
+
+            // Title
+            Font title = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
+            Paragraph p = new Paragraph("Transaction Report", title);
+            p.setAlignment(Element.ALIGN_CENTER);
+            p.setSpacingAfter(12);
+            document.add(p);
+
+            PdfPTable table = new PdfPTable(15);
+            table.setWidthPercentage(100);
+            // headers
+            String[] headers = {"ID","UTR No","Account","IFSC","Bene Name","Sender","Date","Amount","Currency","Mode","Status","Reference","Branch","Description","Remarks"};
+            for (String h : headers) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9)));
+                cell.setBackgroundColor(BaseColor.LIGHT_GRAY);
+                table.addCell(cell);
+            }
+
+            for (Transaction t : transactions) {
+                table.addCell(String.valueOf(t.getTransactionId()));
+                table.addCell(nullSafe(t.getUtrNumber()));
+                table.addCell(nullSafe(t.getAccountNumber()));
+                table.addCell(nullSafe(t.getIfscCode()));
+                table.addCell(nullSafe(t.getBeneficiaryName()));
+                table.addCell(nullSafe(t.getSenderName()));
+                table.addCell(t.getTransactionDate() != null ? t.getTransactionDate().toString() : "");
+                table.addCell(String.valueOf(t.getAmount()));
+                table.addCell(nullSafe(t.getCurrency()));
+                table.addCell(nullSafe(t.getMode()));
+                table.addCell(nullSafe(t.getStatus()));
+                table.addCell(nullSafe(t.getReferenceNumber()));
+                table.addCell(nullSafe(t.getBranch()));
+                table.addCell(nullSafe(t.getDescription()));
+                table.addCell(nullSafe(t.getRemarks()));
+            }
+
+            document.add(table);
+            document.close();
+        } catch (DocumentException e) {
+            throw new ServletException("Error generating PDF", e);
+        }
+    }
+
+    private String trimParam(String s) { return (s == null) ? null : s.trim(); }
+    private String nullSafe(String s) { return s == null ? "" : s; }
+}

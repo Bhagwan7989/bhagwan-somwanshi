@@ -1,0 +1,73 @@
+package servlet;
+
+import dao.TransactionDAO;
+import model.Transaction;
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.*;
+import java.io.IOException;
+import java.util.List;
+
+public class PdfExportServlet extends HttpServlet {
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String startDate = request.getParameter("startDate");
+        String endDate = request.getParameter("endDate");
+        String status = request.getParameter("status");
+        String minAmount = request.getParameter("minAmount");
+        String maxAmount = request.getParameter("maxAmount");
+        String accountNumber = request.getParameter("accountNumber");
+        String ifscCode = request.getParameter("ifscCode");
+
+        TransactionDAO dao = new TransactionDAO();
+        List<Transaction> transactions = dao.getFilteredTransactions(
+                startDate, endDate, status, minAmount, maxAmount,
+                accountNumber, ifscCode, null, null
+        );
+
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=transactions.pdf");
+
+        try {
+            Document document = new Document();
+            PdfWriter.getInstance(document, response.getOutputStream());
+            document.open();
+
+            PdfPTable table = new PdfPTable(15);
+            table.setWidthPercentage(100);
+            table.setSpacingBefore(10f);
+            table.setSpacingAfter(10f);
+
+            String[] columns = {"ID","UTR","Account","IFSC","Beneficiary","Sender","Date","Amount","Currency","Mode","Status","Ref","Branch","Description","Remarks"};
+            for (String col : columns) table.addCell(new PdfPCell(new Phrase(col)));
+
+            for (Transaction t : transactions) {
+                table.addCell(String.valueOf(t.getTransactionId()));
+                table.addCell(t.getUtrNumber());
+                table.addCell(t.getAccountNumber());
+                table.addCell(t.getIfscCode());
+                table.addCell(t.getBeneficiaryName());
+                table.addCell(t.getSenderName());
+                table.addCell(t.getTransactionDate().toString());
+                table.addCell(String.valueOf(t.getAmount()));
+                table.addCell(t.getCurrency());
+                table.addCell(t.getMode());
+                table.addCell(t.getStatus());
+                table.addCell(t.getReferenceNumber());
+                table.addCell(t.getBranch());
+                table.addCell(t.getDescription());
+                table.addCell(t.getRemarks());
+            }
+
+            document.add(table);
+            document.close();
+        } catch (DocumentException e) {
+            e.printStackTrace();
+        }
+    }
+}
