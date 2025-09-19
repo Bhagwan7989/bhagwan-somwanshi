@@ -19,7 +19,6 @@ public class Transaction {
     private String description;
     private String remarks;
 
-    // Getters and Setters
     public int getTransactionId() { return transactionId; }
     public void setTransactionId(int transactionId) { this.transactionId = transactionId; }
 
