@@ -124,17 +124,17 @@
 <div class="mt-3 text-center">
     <nav>
         <ul class="pagination justify-content-center">
-            <%-- Previous Button --%>
+          
             <li class="page-item <%= (currentPage == 1) ? "disabled" : "" %>">
                 <button class="page-link" onclick="submitPage(<%= currentPage - 1 %>)">Previous</button>
             </li>
 
-            <%-- Current Page Display --%>
+           
             <li class="page-item active">
                 <span class="page-link"><%= currentPage %></span>
             </li>
 
-            <%-- Next Button --%>
+           
             <li class="page-item <%= (currentPage.equals(totalPages)) ? "disabled" : "" %>">
                 <button class="page-link" onclick="submitPage(<%= currentPage + 1 %>)">Next</button>
             </li>
