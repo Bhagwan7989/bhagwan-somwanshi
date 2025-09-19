@@ -36,7 +36,7 @@
     <div class="card p-4">
         <h2 class="text-center mb-4">💳 Transaction Report</h2>
 
-        <!-- Filter Form -->
+        
         <form action="ReportServlet" method="post" class="row g-3 mb-4" id="filterForm">
             <input type="hidden" name="page" value="<%=currentPage%>">
             <div class="col-md-2">
@@ -77,7 +77,7 @@
             </div>
         </form>
 
-        <!-- Results -->
+        
         <% if (transactions != null && !transactions.isEmpty()) { %>
             <div class="d-flex justify-content-between mb-3">
                 <h5>Showing <%= transactions.size() %> records (Page <%= currentPage %> of <%= totalPages %>)</h5>
