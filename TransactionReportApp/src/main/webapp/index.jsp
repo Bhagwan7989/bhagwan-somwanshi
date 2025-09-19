@@ -120,8 +120,7 @@
                 </table>
             </div>
 
-            <%-- Pagination Controls --%>
-<!-- Pagination Controls -->
+         
 <div class="mt-3 text-center">
     <nav>
         <ul class="pagination justify-content-center">
