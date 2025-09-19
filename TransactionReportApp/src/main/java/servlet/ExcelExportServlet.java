@@ -19,7 +19,7 @@ public class ExcelExportServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        HttpSession session = req.getSession(false); // get existing session, do not create
+        HttpSession session = req.getSession(false);
         Date fromDate = null;
         Date toDate = null;
         Double minAmt = null;
@@ -38,7 +38,6 @@ public class ExcelExportServlet extends HttpServlet {
             paymentStatus = (String) session.getAttribute("paymentStatus");
         }
 
-        // If session is empty, no filters applied
         TransactionDAO dao = new TransactionDAO();
         List<Transaction> transactions = dao.getTransactions(
                 fromDate, toDate, minAmt, maxAmt, accountNumber, ifscCode, paymentStatus
